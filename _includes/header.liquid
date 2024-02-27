@@ -1,0 +1,19 @@
+<aside class="logo">
+  {% if page.url == '/index.liquid' or page.url == '/' %}
+    {% assign link = '/about' %}
+    {% assign prompt = 'About the Author' %}
+  {% else %}
+    {% assign link = '/' %}
+    {% assign prompt = 'Back to Home' %}
+  {% endif %}
+
+  <div class="title-container">
+    <a href="{{ link | prepend: site.url }}">
+        <img class="gravatar" src="https://avatars.githubusercontent.com/u/24614499?v=4">
+    </a>
+    <span class="title-text"> {{site.title}} </span>
+  </div>
+
+
+
+</aside>
