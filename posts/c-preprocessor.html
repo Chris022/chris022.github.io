@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+<meta content="IE=edge" http-equiv="X-UA-Compatible">
+<meta content="width=device-width, initial-scale=1" name="viewport" />
+
+
+  <title>Der C Präprozessor
+    ·
+    Web-C: A Blog.</title>
+
+
+<meta name="description" content="AbstractIn diesem Artikel geht es um den C-Präprozessor und coole Dinge, die man damit machen kann.">
+
+
+
+<link rel="icon" href="http://localhost:4000/assets/favicon.png">
+<link rel="apple-touch-icon" href="http://localhost:4000/assets/touch-icon.png">
+<link rel="stylesheet" href="http://localhost:4000/assets/core.css">
+<link rel="canonical" href="http://localhost:4000/posts/c-preprocessor">
+<link
+  rel="alternate"
+  type="application/atom+xml"
+  title="Web-C: A Blog."
+  href="http://localhost:4000/feed.xml" />
+
+
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [
+          [
+            '$', '$'
+          ],
+          [
+            '\\(', '\\)'
+          ]
+        ]
+      }
+    };
+  </script>
+  <script
+    async
+    id="MathJax-script"
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</head>
+
+<body class="root">
+	<aside class="logo">
+  
+
+  <div class="title-container">
+    <a href="http://localhost:4000/">
+        <img class="gravatar" src="https://avatars.githubusercontent.com/u/24614499?v=4">
+    </a>
+    <span class="title-text"> Web-C: A Blog. </span>
+  </div>
+
+
+
+</aside>
+
+	<main>
+  <article>
+    <div class="center">
+      <h1>Der C Präprozessor</h1>
+      <p class="author">
+        Christoph Weberbauer
+        <br/>
+        February 27, 2023
+      </p>
+
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="abstract"><h5>Abstract</h5><p>
+In diesem Artikel geht es um den C-Präprozessor und coole Dinge, die man damit machen kann.
+
+Disclaimer: Ich bin kein C-Profi, habe mich aber gestern mit dem Präprozessor beschäftigt und wollte die Dinge, die ich dabei gelernt habe, hier etwas zusammenfassen.
+</p></div>
+
+<h2 id="einleitung">Einleitung</h2>
+
+<p>Der <a href="https://gcc.gnu.org/onlinedocs/cpp/">C-Präprozessor</a> ist ein Programm, welches grundsätzlich separat zum eigentlichen C-Compiler existiert. Für gewöhnlich wird dieses Programm allerdings als erster Schritt beim Compilieren von C-Code aufgerufen. Im Grunde genommen ist der Präprozessor eine eigene Programmiersprache, die Sourcecode eines Programmes noch vor dessen Kompilierung verändert.
+Ein weiteres sehr bekanntes Beispiel für einen solchen Präprozessor ist <a href="https://de.wikipedia.org/wiki/PHP">PHP</a>.
+Laut <a href="https://de.wikipedia.org/wiki/C-Pr%C3%A4prozessor">Wikipedia</a> bearbeitet der C-Präprozessor “Anweisungen zum Einfügen von Quelltext (<code class="language-plaintext highlighter-rouge">#include</code>), zum Ersetzen von Makros (<code class="language-plaintext highlighter-rouge">#define</code>), und bedingter Übersetzung (<code class="language-plaintext highlighter-rouge">#if</code>).” Was genau dies heißt, will ich in dieser Notiz etwas genauer betrachten.</p>
+
+<h2 id="einfügen-von-quelltext">Einfügen von Quelltext</h2>
+
+<p>In C ist es so, dass eine Funktion erst aufgerufen werden kann, nachdem sie definiert worden ist. Anders hat der C-Compiler keine Chance zu wissen, ob die Datentypen des Funktionsaufrufes korrekt sind. Betrachtet man also das folgende Stück Code:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="kt">void</span> <span class="nf">main</span><span class="p">(){</span>
+	<span class="n">say_hello</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">say_hello</span><span class="p">(){</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">"Hello World."</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>So würde der C-Compiler einen Fehler erzeugen, da er zum Zeitpunkt des Aufrufs von <code class="language-plaintext highlighter-rouge">say_hello()</code> noch nichts über die Existenz dieser Funktion weiß. Als Lösung gibt es zwei Möglichkeiten. Möglichkeit 1 ist es, die Funktion vor dem ersten Aufruf zu definieren. Dies ist jedoch nicht immer praktikabel. Deshalb existiert die Möglichkeit, 2. Dabei weiß man den C-Compiler nur vor dem ersten Aufruf der Funktion auf deren Existenz hin. Also zum Beispiel so:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="kt">void</span> <span class="nf">say_hello</span><span class="p">();</span>
+
+<span class="kt">void</span> <span class="nf">main</span><span class="p">(){</span>
+	<span class="n">say_hello</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">say_hello</span><span class="p">(){</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">"Hello World."</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>In diesem Fall muss die Implantation der Funktion dann nicht einmal in derselben Datei passieren. So kann man auch folgendes machen</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//main.c</span>
+<span class="kt">void</span> <span class="nf">say_hello</span><span class="p">();</span>
+
+<span class="kt">void</span> <span class="nf">main</span><span class="p">(){</span>
+	<span class="n">say_hello</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//other.c</span>
+<span class="cp"># include &lt;stdio.h&gt;
+</span>
+<span class="kt">void</span> <span class="nf">say_hello</span><span class="p">(){</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">"Hello"</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Beim Compilieren gibt man dann einfach alle zu compilierenden Dateien an. Also <code class="language-plaintext highlighter-rouge">gcc main.c other.c</code>. Wichtig, damit man die Funktion <code class="language-plaintext highlighter-rouge">say_hello()</code> aber in <code class="language-plaintext highlighter-rouge">main.c</code> aufrufen kann, muss der C-Compiler wissen, dass diese existiert. Daher auch die Deklaration: <code class="language-plaintext highlighter-rouge">void say_hello()</code>. Dies muss man nun also in alle Files geben, in denen die Funktion aufgerufen werden soll. Benutzt man viele Files, kann dies sehr umständlich werden. Deshalb werden diese Deklarationen meist in sogenannten Header Files gesammelt. 
+Dies bedeutet, man erstellt ein File <code class="language-plaintext highlighter-rouge">other.h</code> welches alle Deklarationen des Files <code class="language-plaintext highlighter-rouge">other.c</code> enthält. Also so</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//other.h</span>
+<span class="kt">void</span> <span class="nf">say_hello</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p>Und hier kommt nun der Präprozessor ins Spiel. Dieser stellt jetzt den Befehl <code class="language-plaintext highlighter-rouge">#include "file"</code> zur Verfügung. Dieser macht nichts anders, als den Inhalt des Files mit dem Namen <code class="language-plaintext highlighter-rouge">file</code> in das eigentliche File zu kopieren. Also kann man unser <code class="language-plaintext highlighter-rouge">main.c</code> wie folgt umschreiben.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//main.c</span>
+<span class="cp">#include</span> <span class="cpf">"other.h"</span><span class="cp">
+</span>
+<span class="kt">void</span> <span class="nf">main</span><span class="p">(){</span>
+	<span class="n">say_hello</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Beim Compilieren wird nun im ersten Schritt der Präprozessor aufgerufen und fügt nun die Deklaration unserer Funktion <code class="language-plaintext highlighter-rouge">say_hello</code> (und alle anderen aus <code class="language-plaintext highlighter-rouge">other.h</code>) in <code class="language-plaintext highlighter-rouge">main.c</code> ein.</p>
+
+<p>INFO: Es gibt zwei Arten von <code class="language-plaintext highlighter-rouge">#include</code>. Schreibt man den Filenamen in <code class="language-plaintext highlighter-rouge">&lt;&gt;</code> also z.B.: <code class="language-plaintext highlighter-rouge">#include &lt;stdio.h&gt;</code> so sucht der Präprozessor nur im Pfad des C-Compilers nach der Datei. 
+Schreibt man den Filenamen in <code class="language-plaintext highlighter-rouge">""</code> also z.B.: <code class="language-plaintext highlighter-rouge">#include "other.h"</code> so sucht der Präprozessor zusätzlich noch im aktuellen Verzeichnis.</p>
+
+<p>Zusammengefasst macht der <code class="language-plaintext highlighter-rouge">#include</code> Befehl nichts anders, als den Inhalt einer Datei in die andere Datei zu kopieren. Dies werden wir später noch genauer untersuchen.</p>
+
+<h2 id="makros">Makros</h2>
+
+<p>Ein Makro ist einfach ein benanntes Stück Code. Jedes Vorkommen des Namens wird dann einfach durch den Code ersetzt. So kann man zum Beispiel ein Makro namens <code class="language-plaintext highlighter-rouge">PI</code> erstellen und dann im Code wie folgt nutzen:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define PI 3.1415
+</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"%i"</span><span class="p">,</span> <span class="n">PI</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Der Unterschied zwischen einer Variable und einem Makro ist hierbei, dass das Makro schon vor dem Kompilieren ersetzt wird. Der C-Compiler sieht also obigen Code nie. Stattdessen sieht dieser lediglich</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">printf</span><span class="p">(</span><span class="s">"%i"</span><span class="p">,</span> <span class="mi">3</span><span class="p">.</span><span class="mi">1415</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Es gibt dabei zwei Arten von Makros.
+1) Makros ohne Parameter. Dies sind Makros wie oben, wobei ein Text einfach durch einen anderen Text ersetzt wird.
+2) Makros mit Parametern. Diese Makros ähneln einer Funktion. Akzeptieren also Parameter. Basierend auf diesen Parametern wird ein Text dann durch unterschiedliche Texte ersetzt. Ein Beispiel ist z.B. das folgende Makro, welches die größere von zwei Zahlen findet. <code class="language-plaintext highlighter-rouge">#define MAX(a, b) ((a) &lt; (b) ? (b) : (a))</code>. Ich will hierbei erneut anmerken, dass ein Aufruf <code class="language-plaintext highlighter-rouge">MAX(1,2)</code> kein wirklicher Funktionsaufruf ist! Stattdessen wird <code class="language-plaintext highlighter-rouge">MAX(1,2)</code> einfach durch <code class="language-plaintext highlighter-rouge">((1) &lt; (2) ? (2) : (1))</code> ersetzt.</p>
+
+<p>INFO: Will man mehrere Zeilen ersetzen, so endet man eine Zeile immer mit <code class="language-plaintext highlighter-rouge">\</code> ähnlich wie in Python.</p>
+
+<p>Mithilfe dieser Makros kann man nun einige coole Dinge machen. Zum Beispiel kann man die gesamte Syntax von C verändern und neue Kontrollstrukturen erschaffen. So gibt es in C keine <code class="language-plaintext highlighter-rouge">foreach</code> Schleife. Mit Makros kann man diese aber nachbauen.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="cp">#define foreach(from, to) \
+	for(int i = from; i &lt; to; i++)
+</span>
+
+<span class="kt">void</span> <span class="nf">main</span><span class="p">(){</span>
+	<span class="n">foreach</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">){</span>
+		<span class="n">printf</span><span class="p">(</span><span class="s">"%i"</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Eine Library, die dies sehr exzessiv nutzt, ist <a href="https://github.com/catchorg/Catch2">Catch2</a>.</p>
+
+<p>Makros erlauben es einem auch generelle Funktionen zu schreiben. Angenommen, man will eine Funktion <code class="language-plaintext highlighter-rouge">add</code> schreiben, die zwei <code class="language-plaintext highlighter-rouge">Ints</code> addiert. So kann man dies natürlich einfach machen. Aber was, wenn man nun die gleiche Funktion mit <code class="language-plaintext highlighter-rouge">Doubles</code> schreiben will… Dann kann man dies natürlich auch händisch machen, dies wird aber evl. mit der Zeit zu aufwendig. Deshalb kann man auch ein Makro schreiben, welches eine add Funktion erzeugt.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span>
+<span class="cp">#define ADD(TYPE) \
+	TYPE add_##TYPE(TYPE a, TYPE b){return a + b;}
+</span>
+<span class="n">ADD</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span>
+<span class="n">ADD</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>
+<span class="n">ADD</span><span class="p">(</span><span class="kt">char</span><span class="p">)</span>
+
+<span class="kt">void</span> <span class="nf">main</span><span class="p">(){</span>
+	<span class="n">printf</span><span class="p">(</span><span class="s">"%i"</span><span class="p">,</span> <span class="n">add_int</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">));</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Merke das <code class="language-plaintext highlighter-rouge">##</code> beim Namen der Funktion. Dies nutzt man, da der Präprozessor sonst das <code class="language-plaintext highlighter-rouge">TYPE</code> in <code class="language-plaintext highlighter-rouge">add_TYPE</code> nicht ersetzen würde, da er <code class="language-plaintext highlighter-rouge">add_TYPE</code> als ein einziges Literal sieht. Durch das <code class="language-plaintext highlighter-rouge">##</code> sagt man dem Präprozessor dann, dass <code class="language-plaintext highlighter-rouge">add_</code> und <code class="language-plaintext highlighter-rouge">TYPE</code> separate Literale sind. Für genauere Information Empfehle ich <a href="https://gcc.gnu.org/onlinedocs/cpp/Concatenation.html">Concatenation</a> und <a href="https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html">Stringizing</a>.</p>
+<h2 id="bedingte-ersetzung">Bedingte Ersetzung</h2>
+<p>Die folgenden Befehle können verwendet werden, um gewisse Teile von Code unter bestimmten Bedingungen zu ersetzen: <code class="language-plaintext highlighter-rouge">#if</code>, <code class="language-plaintext highlighter-rouge">#ifdef</code>, <code class="language-plaintext highlighter-rouge">#ifndef</code>, <code class="language-plaintext highlighter-rouge">#else</code>, <code class="language-plaintext highlighter-rouge">#elif</code> und <code class="language-plaintext highlighter-rouge">#endif</code>. 
+Die Befehle funktionieren dabei immer ähnlich und können am besten anhand eines Beispiels erklärt werden:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#if VERBOSE &gt;=2
+</span>	<span class="n">printf</span><span class="p">(</span><span class="s">"test"</span><span class="p">);</span>
+<span class="cp">#else
+</span>	<span class="n">printf</span><span class="p">(</span><span class="s">"other"</span><span class="p">);</span>
+<span class="cp">#endif
+</span></code></pre></div></div>
+
+<p>Hierbei prüft der Präprozessor, ob ein Makro namens <code class="language-plaintext highlighter-rouge">VERBOSE</code> einen Wert größer gleich 2 hat. Wenn ja, fügt er den Code <code class="language-plaintext highlighter-rouge">printf("test");</code> in den Output ein. Wenn nicht, wird der Codeteil aus dem else Zweig in den Output inkludiert.</p>
+
+<p><code class="language-plaintext highlighter-rouge">#ifdef</code> prüft nun nicht den Wert eines Makros, sondern lediglich, ob das Makro definiert ist.
+<code class="language-plaintext highlighter-rouge">#ifndef</code> prüft dann noch, ob das Makro nicht definiert ist.</p>
+
+<p>In C kann dies praktisch sein, wenn man auf unterschiedlichen Betriebssystemen unterschiedliche Libraries inkludieren muss.</p>
+<h2 id="c-präprozessor-als-programm">C-Präprozessor als Programm</h2>
+<p>Zum Schluss will ich nun noch verdeutlichen, dass der Präprozessor nichts direkt mit dem C-Compiler zu tun hat! Dafür will ich den C-Präprozessor einfach mal in Python nutzen. Um den Präprozessor vor der Python-Interpretation aufzurufen, nutzten wir das gcc Flag <code class="language-plaintext highlighter-rouge">-E</code> und ein wenig Linux trixerrei.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cat </span>file.py | gcc <span class="nt">-E</span> - | python3 -
+</code></pre></div></div>
+
+<p>Damit können wir nun die volle Power des Präprozessor nutzen und z.B.: ein Programm wie folgt schreiben:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#define PRINT_PY() \
+</span>	<span class="k">print</span><span class="p">(</span><span class="mf">3.1415</span><span class="p">)</span>
+
+<span class="n">PRINT_PY</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Ob dies nun in Python sonderlich nützlich ist, würde ich eher bezweifeln. Aber theoretisch klappt es auf jeden Fall und der ein oder andere ist sicher etwas kreativer als ich und findet sicherlich coole arten, dies zu nutzen.</p>
+
+
+  </article>
+
+  <div class="page-navigation">
+    
+    <a
+      class="home"
+      href="http://localhost:4000"
+      title="Back to Homepage">Home</a>
+    
+  </div>
+</main>
+
+	<div class="footer">
+  <span class="block">&copy;
+    2024
+    Chris022</span>
+</div>
+
+</body>
+
+</html>

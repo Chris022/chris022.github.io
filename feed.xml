@@ -1,22 +1,185 @@
----
-layout: null
----
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>{{ site.title }}</title>
-    <description>{{ site.description }}</description>
-    <link>{{ site.baseurl | prepend: site.url }}</link>
-    {% for post in site.posts %}
-      {% unless post.draft %}
+    <title>Web-C: A Blog.</title>
+    <description>My personal Blog.</description>
+    <link>http://localhost:4000</link>
+    
+      
         <item>
-          <title>{{ post.title | xml_escape }}</title>
-          <description>{{ post.content | xml_escape }}</description>
-          <pubDate>{{ post.date | date_to_xmlschema }}</pubDate>
-          <link>{{ post.url | prepend: site.baseurl | prepend: site.url }}</link>
-          <guid isPermaLink="true">{{ post.url | prepend: site.baseurl | prepend: site.url }}</guid>
+          <title>Der C Präprozessor</title>
+          <description>&lt;div class=&quot;abstract&quot;&gt;&lt;h5&gt;Abstract&lt;/h5&gt;&lt;p&gt;
+In diesem Artikel geht es um den C-Präprozessor und coole Dinge, die man damit machen kann.
+
+Disclaimer: Ich bin kein C-Profi, habe mich aber gestern mit dem Präprozessor beschäftigt und wollte die Dinge, die ich dabei gelernt habe, hier etwas zusammenfassen.
+&lt;/p&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;einleitung&quot;&gt;Einleitung&lt;/h2&gt;
+
+&lt;p&gt;Der &lt;a href=&quot;https://gcc.gnu.org/onlinedocs/cpp/&quot;&gt;C-Präprozessor&lt;/a&gt; ist ein Programm, welches grundsätzlich separat zum eigentlichen C-Compiler existiert. Für gewöhnlich wird dieses Programm allerdings als erster Schritt beim Compilieren von C-Code aufgerufen. Im Grunde genommen ist der Präprozessor eine eigene Programmiersprache, die Sourcecode eines Programmes noch vor dessen Kompilierung verändert.
+Ein weiteres sehr bekanntes Beispiel für einen solchen Präprozessor ist &lt;a href=&quot;https://de.wikipedia.org/wiki/PHP&quot;&gt;PHP&lt;/a&gt;.
+Laut &lt;a href=&quot;https://de.wikipedia.org/wiki/C-Pr%C3%A4prozessor&quot;&gt;Wikipedia&lt;/a&gt; bearbeitet der C-Präprozessor “Anweisungen zum Einfügen von Quelltext (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include&lt;/code&gt;), zum Ersetzen von Makros (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#define&lt;/code&gt;), und bedingter Übersetzung (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#if&lt;/code&gt;).” Was genau dies heißt, will ich in dieser Notiz etwas genauer betrachten.&lt;/p&gt;
+
+&lt;h2 id=&quot;einfügen-von-quelltext&quot;&gt;Einfügen von Quelltext&lt;/h2&gt;
+
+&lt;p&gt;In C ist es so, dass eine Funktion erst aufgerufen werden kann, nachdem sie definiert worden ist. Anders hat der C-Compiler keine Chance zu wissen, ob die Datentypen des Funktionsaufrufes korrekt sind. Betrachtet man also das folgende Stück Code:&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#include&lt;/span&gt; &lt;span class=&quot;cpf&quot;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
+&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello World.&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So würde der C-Compiler einen Fehler erzeugen, da er zum Zeitpunkt des Aufrufs von &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;say_hello()&lt;/code&gt; noch nichts über die Existenz dieser Funktion weiß. Als Lösung gibt es zwei Möglichkeiten. Möglichkeit 1 ist es, die Funktion vor dem ersten Aufruf zu definieren. Dies ist jedoch nicht immer praktikabel. Deshalb existiert die Möglichkeit, 2. Dabei weiß man den C-Compiler nur vor dem ersten Aufruf der Funktion auf deren Existenz hin. Also zum Beispiel so:&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#include&lt;/span&gt; &lt;span class=&quot;cpf&quot;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
+&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello World.&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;In diesem Fall muss die Implantation der Funktion dann nicht einmal in derselben Datei passieren. So kann man auch folgendes machen&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;//main.c&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;//other.c&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;# include &amp;lt;stdio.h&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Beim Compilieren gibt man dann einfach alle zu compilierenden Dateien an. Also &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;gcc main.c other.c&lt;/code&gt;. Wichtig, damit man die Funktion &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;say_hello()&lt;/code&gt; aber in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main.c&lt;/code&gt; aufrufen kann, muss der C-Compiler wissen, dass diese existiert. Daher auch die Deklaration: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;void say_hello()&lt;/code&gt;. Dies muss man nun also in alle Files geben, in denen die Funktion aufgerufen werden soll. Benutzt man viele Files, kann dies sehr umständlich werden. Deshalb werden diese Deklarationen meist in sogenannten Header Files gesammelt. 
+Dies bedeutet, man erstellt ein File &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;other.h&lt;/code&gt; welches alle Deklarationen des Files &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;other.c&lt;/code&gt; enthält. Also so&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;//other.h&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Und hier kommt nun der Präprozessor ins Spiel. Dieser stellt jetzt den Befehl &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include &quot;file&quot;&lt;/code&gt; zur Verfügung. Dieser macht nichts anders, als den Inhalt des Files mit dem Namen &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;file&lt;/code&gt; in das eigentliche File zu kopieren. Also kann man unser &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main.c&lt;/code&gt; wie folgt umschreiben.&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;//main.c&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include&lt;/span&gt; &lt;span class=&quot;cpf&quot;&gt;&quot;other.h&quot;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
+&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;say_hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Beim Compilieren wird nun im ersten Schritt der Präprozessor aufgerufen und fügt nun die Deklaration unserer Funktion &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;say_hello&lt;/code&gt; (und alle anderen aus &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;other.h&lt;/code&gt;) in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;main.c&lt;/code&gt; ein.&lt;/p&gt;
+
+&lt;p&gt;INFO: Es gibt zwei Arten von &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include&lt;/code&gt;. Schreibt man den Filenamen in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;&amp;gt;&lt;/code&gt; also z.B.: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include &amp;lt;stdio.h&amp;gt;&lt;/code&gt; so sucht der Präprozessor nur im Pfad des C-Compilers nach der Datei. 
+Schreibt man den Filenamen in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&quot;&quot;&lt;/code&gt; also z.B.: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include &quot;other.h&quot;&lt;/code&gt; so sucht der Präprozessor zusätzlich noch im aktuellen Verzeichnis.&lt;/p&gt;
+
+&lt;p&gt;Zusammengefasst macht der &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include&lt;/code&gt; Befehl nichts anders, als den Inhalt einer Datei in die andere Datei zu kopieren. Dies werden wir später noch genauer untersuchen.&lt;/p&gt;
+
+&lt;h2 id=&quot;makros&quot;&gt;Makros&lt;/h2&gt;
+
+&lt;p&gt;Ein Makro ist einfach ein benanntes Stück Code. Jedes Vorkommen des Namens wird dann einfach durch den Code ersetzt. So kann man zum Beispiel ein Makro namens &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PI&lt;/code&gt; erstellen und dann im Code wie folgt nutzen:&lt;/p&gt;
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#define PI 3.1415
+&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;%i&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Der Unterschied zwischen einer Variable und einem Makro ist hierbei, dass das Makro schon vor dem Kompilieren ersetzt wird. Der C-Compiler sieht also obigen Code nie. Stattdessen sieht dieser lediglich&lt;/p&gt;
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;%i&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1415&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Es gibt dabei zwei Arten von Makros.
+1) Makros ohne Parameter. Dies sind Makros wie oben, wobei ein Text einfach durch einen anderen Text ersetzt wird.
+2) Makros mit Parametern. Diese Makros ähneln einer Funktion. Akzeptieren also Parameter. Basierend auf diesen Parametern wird ein Text dann durch unterschiedliche Texte ersetzt. Ein Beispiel ist z.B. das folgende Makro, welches die größere von zwei Zahlen findet. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#define MAX(a, b) ((a) &amp;lt; (b) ? (b) : (a))&lt;/code&gt;. Ich will hierbei erneut anmerken, dass ein Aufruf &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MAX(1,2)&lt;/code&gt; kein wirklicher Funktionsaufruf ist! Stattdessen wird &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MAX(1,2)&lt;/code&gt; einfach durch &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;((1) &amp;lt; (2) ? (2) : (1))&lt;/code&gt; ersetzt.&lt;/p&gt;
+
+&lt;p&gt;INFO: Will man mehrere Zeilen ersetzen, so endet man eine Zeile immer mit &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;\&lt;/code&gt; ähnlich wie in Python.&lt;/p&gt;
+
+&lt;p&gt;Mithilfe dieser Makros kann man nun einige coole Dinge machen. Zum Beispiel kann man die gesamte Syntax von C verändern und neue Kontrollstrukturen erschaffen. So gibt es in C keine &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;foreach&lt;/code&gt; Schleife. Mit Makros kann man diese aber nachbauen.&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#include&lt;/span&gt; &lt;span class=&quot;cpf&quot;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
+&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#define foreach(from, to) \
+	for(int i = from; i &amp;lt; to; i++)
+&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;foreach&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;){&lt;/span&gt;
+		&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;%i&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+	&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Eine Library, die dies sehr exzessiv nutzt, ist &lt;a href=&quot;https://github.com/catchorg/Catch2&quot;&gt;Catch2&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Makros erlauben es einem auch generelle Funktionen zu schreiben. Angenommen, man will eine Funktion &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add&lt;/code&gt; schreiben, die zwei &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Ints&lt;/code&gt; addiert. So kann man dies natürlich einfach machen. Aber was, wenn man nun die gleiche Funktion mit &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Doubles&lt;/code&gt; schreiben will… Dann kann man dies natürlich auch händisch machen, dies wird aber evl. mit der Zeit zu aufwendig. Deshalb kann man auch ein Makro schreiben, welches eine add Funktion erzeugt.&lt;/p&gt;
+
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#include&lt;/span&gt; &lt;span class=&quot;cpf&quot;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
+&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#define ADD(TYPE) \
+	TYPE add_##TYPE(TYPE a, TYPE b){return a + b;}
+&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;ADD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;ADD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;ADD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;%i&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;add_int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Merke das &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;##&lt;/code&gt; beim Namen der Funktion. Dies nutzt man, da der Präprozessor sonst das &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TYPE&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add_TYPE&lt;/code&gt; nicht ersetzen würde, da er &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add_TYPE&lt;/code&gt; als ein einziges Literal sieht. Durch das &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;##&lt;/code&gt; sagt man dem Präprozessor dann, dass &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add_&lt;/code&gt; und &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TYPE&lt;/code&gt; separate Literale sind. Für genauere Information Empfehle ich &lt;a href=&quot;https://gcc.gnu.org/onlinedocs/cpp/Concatenation.html&quot;&gt;Concatenation&lt;/a&gt; und &lt;a href=&quot;https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html&quot;&gt;Stringizing&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;bedingte-ersetzung&quot;&gt;Bedingte Ersetzung&lt;/h2&gt;
+&lt;p&gt;Die folgenden Befehle können verwendet werden, um gewisse Teile von Code unter bestimmten Bedingungen zu ersetzen: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#if&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#ifdef&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#ifndef&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#else&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#elif&lt;/code&gt; und &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#endif&lt;/code&gt;. 
+Die Befehle funktionieren dabei immer ähnlich und können am besten anhand eines Beispiels erklärt werden:&lt;/p&gt;
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#if VERBOSE &amp;gt;=2
+&lt;/span&gt;	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;test&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#else
+&lt;/span&gt;	&lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;other&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#endif
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Hierbei prüft der Präprozessor, ob ein Makro namens &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VERBOSE&lt;/code&gt; einen Wert größer gleich 2 hat. Wenn ja, fügt er den Code &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;printf(&quot;test&quot;);&lt;/code&gt; in den Output ein. Wenn nicht, wird der Codeteil aus dem else Zweig in den Output inkludiert.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#ifdef&lt;/code&gt; prüft nun nicht den Wert eines Makros, sondern lediglich, ob das Makro definiert ist.
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#ifndef&lt;/code&gt; prüft dann noch, ob das Makro nicht definiert ist.&lt;/p&gt;
+
+&lt;p&gt;In C kann dies praktisch sein, wenn man auf unterschiedlichen Betriebssystemen unterschiedliche Libraries inkludieren muss.&lt;/p&gt;
+&lt;h2 id=&quot;c-präprozessor-als-programm&quot;&gt;C-Präprozessor als Programm&lt;/h2&gt;
+&lt;p&gt;Zum Schluss will ich nun noch verdeutlichen, dass der Präprozessor nichts direkt mit dem C-Compiler zu tun hat! Dafür will ich den C-Präprozessor einfach mal in Python nutzen. Um den Präprozessor vor der Python-Interpretation aufzurufen, nutzten wir das gcc Flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-E&lt;/code&gt; und ein wenig Linux trixerrei.&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;cat &lt;/span&gt;file.py | gcc &lt;span class=&quot;nt&quot;&gt;-E&lt;/span&gt; - | python3 -
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Damit können wir nun die volle Power des Präprozessor nutzen und z.B.: ein Programm wie folgt schreiben:&lt;/p&gt;
+
+&lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;#define PRINT_PY() \
+&lt;/span&gt;	&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;3.1415&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;PRINT_PY&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Ob dies nun in Python sonderlich nützlich ist, würde ich eher bezweifeln. Aber theoretisch klappt es auf jeden Fall und der ein oder andere ist sicher etwas kreativer als ich und findet sicherlich coole arten, dies zu nutzen.&lt;/p&gt;
+</description>
+          <pubDate>2023-02-27T00:00:00+01:00</pubDate>
+          <link>http://localhost:4000/posts/c-preprocessor</link>
+          <guid isPermaLink="true">http://localhost:4000/posts/c-preprocessor</guid>
         </item>
-      {% endunless %}
-    {% endfor %}
+      
+    
   </channel>
 </rss>
