@@ -7,7 +7,7 @@ author_name:        "Chris022" # Your name here
 author_email:       christoph02.cw@gmail.com # Your email here
 
 # Site Settings
-url:                http://localhost:8080
+url:                https://chris022.github.io
 permalink:          /posts/:title # Post permalink
 timezone:           Europe/Berlin # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 mathjax:            true  # enables support for mathjax - set to false to disable
